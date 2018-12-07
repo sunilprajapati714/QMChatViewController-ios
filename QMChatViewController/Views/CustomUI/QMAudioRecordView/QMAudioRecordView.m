@@ -79,7 +79,7 @@
     _recordDurationLabel.backgroundColor = self.backgroundColor;
     _recordDurationLabel.textColor = [UIColor blackColor];
     _recordDurationLabel.font = [UIFont systemFontOfSize:16.0];
-    _recordDurationLabel.text = @"0:00,00 ";
+    _recordDurationLabel.text = @"0:00:00 ";
     _recordDurationLabel.textAlignment = NSTextAlignmentLeft;
     
     UIImage *indicatorImage = circleImage(CGRectGetWidth(_recordIndicatorView.frame), [UIColor redColor]);
@@ -114,7 +114,7 @@
         
         _slideToCancelLabel.transform = CGAffineTransformMakeTranslation(avoidOffset, 0.0f);
         
-        _recordDurationLabel.text = @"0:00,00";
+        _recordDurationLabel.text = @"0:00:00";
         
         [_recordIndicatorView.layer removeAllAnimations];
         [_recordDurationLabel.layer removeAllAnimations];
@@ -124,21 +124,21 @@
         int animationCurveOption = 7 << 16;
         
         [UIView animateWithDuration:0.25 delay:0.06 options:animationCurveOption animations:^{
-            self.recordIndicatorView.alpha = 1.0f;
-            self.recordIndicatorView.transform = CGAffineTransformIdentity;
+            _recordIndicatorView.alpha = 1.0f;
+            _recordIndicatorView.transform = CGAffineTransformIdentity;
         } completion:nil];
         
         [UIView animateWithDuration:0.25 delay:0.0 options:animationCurveOption animations:^{
-            self.recordDurationLabel.alpha = 1.0f;
-            self.recordDurationLabel.transform = CGAffineTransformIdentity;
+            _recordDurationLabel.alpha = 1.0f;
+            _recordDurationLabel.transform = CGAffineTransformIdentity;
         } completion:nil];
         
         [UIView animateWithDuration:0.18
                               delay:0.04
                             options:animationCurveOption
                          animations:^{
-                             self.slideToCancelLabel.alpha = 1.0f;
-                             self.slideToCancelLabel.transform = CGAffineTransformIdentity;
+                             _slideToCancelLabel.alpha = 1.0f;
+                             _slideToCancelLabel.transform = CGAffineTransformIdentity;
                          } completion:nil];
         
         [self addRecordingDotAnimation];
@@ -161,12 +161,12 @@
                             options:options | animationCurveOption
                          animations:^{
                              
-                             self.recordIndicatorView.alpha = 0.5f;
-                             self.recordIndicatorView.transform = CGAffineTransformMakeTranslation(-90.0f, 0.0f);
+                             _recordIndicatorView.alpha = 0.5f;
+                             _recordIndicatorView.transform = CGAffineTransformMakeTranslation(-90.0f, 0.0f);
                          }
                          completion:^(BOOL finished) {
                              if (finished){
-                                 [self.recordIndicatorView removeFromSuperview];
+                                 [_recordIndicatorView removeFromSuperview];
                              }
                          }];
         
@@ -175,13 +175,13 @@
                             options:UIViewAnimationOptionBeginFromCurrentState | animationCurveOption
                          animations:^ {
                              
-                             self.recordDurationLabel.alpha = 0.0f;
-                             self.recordDurationLabel.transform = CGAffineTransformMakeTranslation(-90.0f, 0.0f);
+                             _recordDurationLabel.alpha = 0.0f;
+                             _recordDurationLabel.transform = CGAffineTransformMakeTranslation(-90.0f, 0.0f);
                              
                          } completion:^(BOOL finished) {
                              
                              if (finished){
-                                 [self.recordDurationLabel removeFromSuperview];
+                                 [_recordDurationLabel removeFromSuperview];
                              }
                          }];
         
@@ -190,8 +190,8 @@
                             options:UIViewAnimationOptionBeginFromCurrentState | animationCurveOption
                          animations:^ {
                              
-                             self.slideToCancelLabel.alpha = 0.0f;
-                             self.slideToCancelLabel.transform = CGAffineTransformMakeTranslation(-200, 0.0f);
+                             _slideToCancelLabel.alpha = 0.0f;
+                             _slideToCancelLabel.transform = CGAffineTransformMakeTranslation(-200, 0.0f);
                          } completion:nil];
     }
 }
@@ -257,7 +257,7 @@ UIImage *circleImage(CGFloat radius, UIColor *color) {
 
 - (void)startAudioRecordingTimer {
     
-    _recordDurationLabel.text = @"0:00,00";
+    _recordDurationLabel.text = @"0:00:00";
     _recordDurationLabel.textColor = [UIColor blackColor];
     
     _audioRecordingDurationSeconds = 0;
@@ -276,7 +276,7 @@ UIImage *circleImage(CGFloat radius, UIColor *color) {
     [[NSRunLoop mainRunLoop] addTimer:_audioRecordingTimer forMode:NSRunLoopCommonModes];
 }
 
-- (void)showErrorMessage:(NSString *)errorMessage completion:(dispatch_block_t)completion {
+- (void)showErrorMessage:(NSString *)errorMessage completion:(void(^)())completion {
     
     _errorMessageLabel.alpha = 0.0;
     _errorMessageLabel.hidden = NO;
@@ -286,7 +286,7 @@ UIImage *circleImage(CGFloat radius, UIColor *color) {
     
     [UIView animateWithDuration:0.25 delay:0.06 options:0 animations:^{
         
-        self.errorMessageLabel.alpha = 1.0f;
+        _errorMessageLabel.alpha = 1.0f;
         
     } completion:^(BOOL finished) {
         
@@ -343,7 +343,7 @@ UIImage *circleImage(CGFloat radius, UIColor *color) {
                 
                 _audioRecordingDurationSeconds = currentAudioDurationSeconds;
                 _audioRecordingDurationMilliseconds = currentAudioDurationMilliseconds;
-                _recordDurationLabel.text = [[NSString alloc] initWithFormat:@"%d:%02d,%02d", (int)_audioRecordingDurationSeconds / 60, (int)_audioRecordingDurationSeconds % 60, (int)_audioRecordingDurationMilliseconds];
+                _recordDurationLabel.text = [[NSString alloc] initWithFormat:@"%02d:%02d,%02d", (int)_audioRecordingDurationSeconds / 60, (int)_audioRecordingDurationSeconds % 60, (int)_audioRecordingDurationMilliseconds];
                 
                 [self.delegate shouldStopRecordingByTimeOut];
                 [self removeDotAnimation];
@@ -355,7 +355,7 @@ UIImage *circleImage(CGFloat radius, UIColor *color) {
         
         _audioRecordingDurationSeconds = currentAudioDurationSeconds;
         _audioRecordingDurationMilliseconds = currentAudioDurationMilliseconds;
-        _recordDurationLabel.text = [[NSString alloc] initWithFormat:@"%d:%02d,%02d", (int)_audioRecordingDurationSeconds / 60, (int)_audioRecordingDurationSeconds % 60, (int)_audioRecordingDurationMilliseconds];
+        _recordDurationLabel.text = [[NSString alloc] initWithFormat:@"%d:%02d:%02d", (int)_audioRecordingDurationSeconds / 60, (int)_audioRecordingDurationSeconds % 60, (int)_audioRecordingDurationMilliseconds];
         
         
         NSTimeInterval interval = 2.0 / 60.0;

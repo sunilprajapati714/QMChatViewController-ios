@@ -10,9 +10,4 @@
 
 @implementation QMImageOutgoingCell
 
-- (void)awakeFromNib {
-    [super awakeFromNib];
-    self.mediaPlayButton.hidden = YES;
-}
-
 @end

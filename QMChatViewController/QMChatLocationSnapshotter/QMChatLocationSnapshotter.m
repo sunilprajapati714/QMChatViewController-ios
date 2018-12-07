@@ -22,7 +22,8 @@ static NSString * const kQMChatLocationSnapshotCacheName = @"com.q-municate.chat
     
     UIImage *locationSnapshot = [QMImageLoader.instance.imageCache imageFromCacheForKey:key];
     
-    if (locationSnapshot) {
+    if (locationSnapshot != nil) {
+        
         completion(locationSnapshot);
         return;
     }

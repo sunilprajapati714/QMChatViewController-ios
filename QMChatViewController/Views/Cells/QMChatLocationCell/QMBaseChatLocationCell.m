@@ -22,7 +22,6 @@
     
     self.imageView.layer.cornerRadius = 4.0;
     self.imageView.layer.shouldRasterize = YES;
-    self.imageView.layer.rasterizationScale = [UIScreen mainScreen].scale;
     self.imageView.layer.masksToBounds = YES;
 }
 

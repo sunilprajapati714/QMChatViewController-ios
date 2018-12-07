@@ -198,11 +198,11 @@ static NSArray *qm_colors = nil;
     
     dispatch_block_t showPlaceholder = ^{
         
-        [self.textLayer setString:title color:[self colorForString:title]];
-        self.textLayer.hidden = NO;
+        [_textLayer setString:title color:[self colorForString:title]];
+        _textLayer.hidden = NO;
         
-        if (!CGRectEqualToRect(self.textLayer.frame, self.bounds)) {
-            self.textLayer.frame = self.bounds;
+        if (!CGRectEqualToRect(_textLayer.frame, self.bounds)) {
+            _textLayer.frame = self.bounds;
         }
     };
     
@@ -213,20 +213,22 @@ static NSArray *qm_colors = nil;
     
     _url = url;
     
-    [self sd_cancelImageLoadOperationWithKey:@"QMImageView"];
+    [self sd_cancelCurrentAnimationImagesLoad];
     
     CGSize targetSize = self.bounds.size;
     QMImageTransformType type = self.imageViewType == QMImageViewTypeCircle ?  QMImageTransformTypeCircle : QMImageTransformTypeCustom;
     QMImageTransform *transform;
-    if (type == QMImageTransformTypeCircle) {
-        transform = [QMImageTransform transformWithType:type size:targetSize];
-    }
+    if (type == QMImageTransformTypeCircle)
+    transform =
+    [QMImageTransform transformWithType:type size:targetSize];
+    
     else if (type == QMImageTransformTypeCustom) {
         
-        transform = [QMImageTransform transformWithSize:targetSize
-                                   customTransformBlock:^UIImage *(NSURL *imageURL, UIImage *originalImage) {
-                                       return [originalImage imageWithCornerRadius:4.0 targetSize:targetSize];
-                                   }];
+    transform =
+        [QMImageTransform transformWithSize:targetSize
+                       customTransformBlock:^UIImage *(NSURL *imageURL, UIImage *originalImage) {
+            return [originalImage imageWithCornerRadius:4.0 targetSize:targetSize];
+        }];
     }
     
     self.image = nil;
@@ -240,7 +242,7 @@ static NSArray *qm_colors = nil;
         [[QMImageLoader instance]
          downloadImageWithURL:url
          transform:transform
-         options:(SDWebImageHighPriority | SDWebImageAllowInvalidSSLCertificates)
+         options:(SDWebImageHighPriority | SDWebImageContinueInBackground | SDWebImageAllowInvalidSSLCertificates)
          progress:nil
          completed:
          ^(UIImage *image, UIImage *transfomedImage,
@@ -255,17 +257,14 @@ static NSArray *qm_colors = nil;
                      weakSelf.image = transfomedImage;
                      [weakSelf setNeedsLayout];
                  }
-                 
              }
              
              if (completedBlock) {
                  completedBlock(image, error, cacheType, imageURL);
              }
-             
-             [weakSelf sd_removeImageLoadOperationWithKey:@"QMImageView"];
          }];
         
-        [self sd_setImageLoadOperation:operation forKey:@"QMImageView"];
+        [self sd_setImageLoadOperation:operation forKey:@"UIImageViewAnimationImages"];
     }
     else {
         
@@ -326,7 +325,7 @@ static NSArray *qm_colors = nil;
                  completedBlock(image, error, cacheType, imageURL);
              }
          }];
-        
+    
         [self sd_setImageLoadOperation:operation forKey:@"UIImageViewImageLoad"];
     }
     else {
@@ -383,6 +382,7 @@ static NSArray *qm_colors = nil;
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc]
                                    initWithTarget:self
                                    action:@selector(handleTapGesture:)];
+    
     [self addGestureRecognizer:tap];
     self.tapGestureRecognizer = tap;
     self.userInteractionEnabled = YES;

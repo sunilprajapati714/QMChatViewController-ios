@@ -63,18 +63,4 @@
                                  resizingMode:UIImageResizingModeStretch];
 }
 
-- (NSData *)dataRepresentation {
-
-        int alphaInfo = CGImageGetAlphaInfo(self.CGImage);
-        BOOL hasAlpha = !(alphaInfo == kCGImageAlphaNone ||
-                          alphaInfo == kCGImageAlphaNoneSkipFirst ||
-                          alphaInfo == kCGImageAlphaNoneSkipLast);
-        
-        if (hasAlpha) {
-            return UIImagePNGRepresentation(self);
-        }
-        else {
-            return UIImageJPEGRepresentation(self, 1.0f);
-        }
-}
 @end

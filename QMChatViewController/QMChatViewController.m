@@ -25,9 +25,10 @@ static void * kChatKeyValueObservingContext = &kChatKeyValueObservingContext;
 
 const NSUInteger kQMSystemInputToolbarDebugHeight = 0;
 
-@interface QMChatViewController () <QMInputToolbarDelegate, UIImagePickerControllerDelegate,
+@interface QMChatViewController ()
+<QMInputToolbarDelegate, UIImagePickerControllerDelegate,
 UINavigationControllerDelegate, UIActionSheetDelegate, UIScrollViewDelegate,
-QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
+UIAlertViewDelegate, QMChatDataSourceDelegate>
 
 @property (weak, nonatomic) IBOutlet QMChatCollectionView *collectionView;
 @property (weak, nonatomic) IBOutlet QMInputToolbar *inputToolbar;
@@ -66,9 +67,10 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
     [self registerForNotifications:NO];
     
     self.inputToolbar.contentView.textView.delegate = nil;
-    self.inputToolbar.contentView.textView.qm_placeholderTextViewPasteDelegate = nil;
+    self.inputToolbar.contentView.textView.pasteDelegate = nil;
     self.inputToolbar.delegate = nil;
-
+    
+    self.senderDisplayName = nil;
 }
 
 - (void)viewDidLoad {
@@ -78,12 +80,12 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
     [super viewDidLoad];
     
     [self configureMessagesViewController];
-    [self configureProgressView];
     
     self.automaticallyAdjustsScrollViewInsets = NO;
     //Customize your toolbar buttons
     self.inputToolbar.contentView.leftBarButtonItem = [self accessoryButtonItem];
     self.inputToolbar.contentView.rightBarButtonItem = [self sendButtonItem];
+    self.inputToolbar.audioRecordingEnabled = YES;
     
     __weak __typeof(self) weakSelf = self;
     self.systemInputToolbar = [[QMKVOView alloc] init];
@@ -92,17 +94,18 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
     self.systemInputToolbar.frame = CGRectMake(0, 0, 0, kQMSystemInputToolbarDebugHeight);
     self.systemInputToolbar.hostViewFrameChangeBlock = ^(UIView *view, BOOL animated) {
         
-        CGFloat pos = weakSelf.view.frame.size.height - [weakSelf.view.superview convertPoint:view.frame.origin toView:weakSelf.view].y;
+        CGFloat pos = view.superview.frame.size.height - view.frame.origin.y ;
         
         if (weakSelf.inputToolbar.contentView.textView.isFirstResponder) {
-            if (view.superview.frame.origin.y > 0 && pos <= 0) {
+            
+            if (view.superview.frame.origin.y > 0 && pos == 0) {
                 return;
             }
         }
-        
+
         const CGFloat v = [weakSelf inputToolBarStartPos];
         
-        if (pos < v || !view) {
+        if (pos < v ) {
             pos = v;
         }
         
@@ -136,24 +139,6 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
     NSLog(@"MEMORY WARNING: %s", __PRETTY_FUNCTION__);
 }
 
-- (void)configureProgressView {
-    
-    self.progressView.hidden = YES;
-    self.progressView.hideProgressIcons = YES;
-}
-
-- (void)startSpinProgress {
-    
-    self.progressView.hidden = NO;
-    [self.progressView startSpinProgressBackgroundLayer];
-}
-
-- (void)stopSpinProgress {
-    
-    self.progressView.hidden = YES;
-    [self.progressView stopSpinProgressBackgroundLayer];
-}
-
 - (void)configureMessagesViewController {
     
     [self registerCells];
@@ -163,9 +148,12 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
     
     self.chatDataSource = [[QMChatDataSource alloc] init];
     self.chatDataSource.delegate = self;
+    UITapGestureRecognizer* tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleCollectionTapRecognizer:)];
+    tapRecognizer.cancelsTouchesInView = NO;
+    tapRecognizer.delegate = self;
+    [self.collectionView addGestureRecognizer:tapRecognizer];
     
     self.inputToolbar.delegate = self;
-    self.inputToolbar.audioRecordDelegate = self;
     self.inputToolbar.contentView.textView.delegate = self;
     
     self.automaticallyScrollsToMostRecentMessage = YES;
@@ -252,18 +240,18 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
         }
         
         switch (updateType) {
-                
+            
             case QMDataSourceActionTypeAdd:
-                [self.collectionView insertItemsAtIndexPaths:indexPaths];
-                break;
-                
+            [self.collectionView insertItemsAtIndexPaths:indexPaths];
+            break;
+            
             case QMDataSourceActionTypeUpdate:
-                [self.collectionView reloadItemsAtIndexPaths:indexPaths];
-                break;
-                
+            [self.collectionView reloadItemsAtIndexPaths:indexPaths];
+            break;
+            
             case QMDataSourceActionTypeRemove:
-                [self.collectionView deleteItemsAtIndexPaths:indexPaths];
-                break;
+            [self.collectionView deleteItemsAtIndexPaths:indexPaths];
+            break;
         }
     };
     
@@ -280,6 +268,10 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
 #pragma mark - View lifecycle
 
 - (NSUInteger)inputToolBarStartPos {
+    
+//    if (self.tabBarItem) {
+//        return self.tabBarController.tabBar.frame.size.height;
+//    }
     
     return 0;
 }
@@ -422,7 +414,7 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
                                                           handler();
                                                       }]];
     
-    [alertController addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Cancel", nil)
+    [alertController addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"SA_STR_CANCEL", nil)
                                                         style:UIAlertActionStyleCancel
                                                       handler:nil]];
     
@@ -709,6 +701,14 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
     }
 }
 
+#pragma mark - UIAlertViewDelegate
+
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
+    if (buttonIndex == 1) {
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]];
+    }
+}
+
 #pragma mark - UIImagePickerControllerDelegate
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info
@@ -784,6 +784,13 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
     self.toolbarBottomLayoutGuide.constant = constraintValue;
     
     if (animated) {
+        
+//        self.navigationController.interactivePopGestureRecognizer.enabled = NO;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            
+//            self.navigationController.interactivePopGestureRecognizer.enabled = YES;
+        });
+        
         [self.view layoutIfNeeded];
     }
 }
@@ -934,10 +941,10 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
         switch (status)
         {
             case PHAuthorizationStatusAuthorized:
-                if (completion) {
-                    completion(YES);
-                }
-                break;
+            if (completion) {
+                completion(YES);
+            }
+            break;
             case PHAuthorizationStatusNotDetermined:
             {
                 [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus authorizationStatus)
@@ -951,10 +958,10 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
                 break;
             }
             default:
-                if (completion) {
-                    completion(NO);
-                }
-                break;
+            if (completion) {
+                completion(NO);
+            }
+            break;
         }
     }
 }
@@ -973,23 +980,13 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
         message = NSLocalizedString(@"You can allow access to Photos in Settings", nil);
     }
     
-    UIAlertController *alertController = [UIAlertController
-                                          alertControllerWithTitle:title
-                                          message:message
-                                          preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:title
+                                                    message:message
+                                                   delegate:self
+                                          cancelButtonTitle:NSLocalizedString(@"SA_STR_CANCEL", nil)
+                                          otherButtonTitles:NSLocalizedString(@"Open Settings", nil),nil];
     
-    [alertController addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Open Settings", nil)
-                                                        style:UIAlertActionStyleDefault
-                                                      handler:^(UIAlertAction * _Nonnull __unused action)
-    {
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]];
-    }]];
-    
-    [alertController addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Cancel", nil)
-                                                        style:UIAlertActionStyleCancel
-                                                      handler:nil]];
-    
-    [self presentViewController:alertController animated:YES completion:nil];
+    [alert show];
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
@@ -1047,6 +1044,20 @@ QMChatDataSourceDelegate, QMAudioRecordToolbarDelegate>
     else {
         hideKeyboardBlock();
     }
+}
+
+- (void) handleCollectionTapRecognizer:(UITapGestureRecognizer*)recognizer
+{
+    if(recognizer.state == UIGestureRecognizerStateEnded)
+    {
+        [self.view endEditing:YES];
+        if([self.inputToolbar.contentView.textView isFirstResponder])
+            [self.inputToolbar.contentView.textView resignFirstResponder];
+    }
+}
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+    [self.view endEditing:YES];
+    return YES; // handle the touch
 }
 
 @end

@@ -20,8 +20,11 @@ static void * kQMInputToolbarKeyValueObservingContext = &kQMInputToolbarKeyValue
 @interface QMInputToolbar() <QMAudioRecordButtonProtocol, QMAudioRecordViewProtocol>
 
 @property (assign, nonatomic) BOOL isObserving;
+
 @property (assign, nonatomic, getter=isRecording) BOOL recording;
+
 @property (weak, nonatomic) QMAudioRecordView *audioRecordView;
+
 @property (strong, nonatomic) UIButton *sendButton;
 @property (strong, nonatomic) QMAudioRecordButton *audioRecordButtonItem;
 
@@ -36,6 +39,7 @@ static void * kQMInputToolbarKeyValueObservingContext = &kQMInputToolbarKeyValue
     
     [super awakeFromNib];
     [self commonInit];
+    
 }
 
 - (instancetype)init {
@@ -179,6 +183,7 @@ static void * kQMInputToolbarKeyValueObservingContext = &kQMInputToolbarKeyValue
     if (self.sendButtonOnRight) {
         
         self.contentView.rightBarButtonItem.enabled = hasText || hasTextAttachment;
+        
     }
     else {
         
@@ -317,17 +322,13 @@ static void * kQMInputToolbarKeyValueObservingContext = &kQMInputToolbarKeyValue
 }
 
 - (void)recordButtonInteractionDidBegin {
-
-    if ([self.audioRecordDelegate respondsToSelector:@selector(audioRecordingShouldStart:)]) {
-        if ([self.audioRecordDelegate audioRecordingShouldStart:self]) {
-            self.recording = YES;
-            [self setShowRecordingInterface:true velocity:0.0f];
-            
-            if ([self.audioRecordDelegate respondsToSelector:@selector(audioRecordingStart:)]) {
-                [self.audioRecordDelegate audioRecordingStart:self];
-            }
-            [self startAudioRecording];
-        }
+    
+    if ([self.delegate messagesInputToolbarAudioRecordingShouldStart:self]) {
+        
+        self.recording = YES;
+        [self setShowRecordingInterface:true velocity:0.0f];
+        [self.delegate messagesInputToolbarAudioRecordingStart:self];
+        [self startAudioRecording];
     }
 }
 
@@ -338,9 +339,7 @@ static void * kQMInputToolbarKeyValueObservingContext = &kQMInputToolbarKeyValue
         self.recording = NO;
         [self setShowRecordingInterface:false velocity:velocity];
         
-        if ([self.audioRecordDelegate respondsToSelector:@selector(audioRecordingCancel:)]) {
-            [self.audioRecordDelegate audioRecordingCancel:self];
-        }
+        [self.delegate messagesInputToolbarAudioRecordingCancel:self];
     }
 }
 
@@ -350,9 +349,8 @@ static void * kQMInputToolbarKeyValueObservingContext = &kQMInputToolbarKeyValue
         self.recording = NO;
         
         [self setShowRecordingInterface:false velocity:0.0];
-        
-        if ([self.audioRecordDelegate respondsToSelector:@selector(audioRecordingCancel:)]) {
-            [self.audioRecordDelegate audioRecordingCancel:self];
+        if ([self.delegate respondsToSelector:@selector(messagesInputToolbarAudioRecordingCancel:)]) {
+            [self.delegate messagesInputToolbarAudioRecordingCancel:self];
         }
     }
 }
@@ -364,9 +362,7 @@ static void * kQMInputToolbarKeyValueObservingContext = &kQMInputToolbarKeyValue
         self.recording = NO;
         [self setShowRecordingInterface:false velocity:velocity];
         
-        if ([self.audioRecordDelegate respondsToSelector:@selector(audioRecordingComplete:)]) {
-            [self.audioRecordDelegate audioRecordingComplete:self];
-        }
+        [self.delegate messagesInputToolbarAudioRecordingComplete:self];
     }
 }
 
@@ -390,15 +386,15 @@ static void * kQMInputToolbarKeyValueObservingContext = &kQMInputToolbarKeyValue
 
 - (void)shouldStopRecordingByTimeOut {
     
-    if ([self.audioRecordDelegate respondsToSelector:@selector(audioRecordingPausedByTimeOut:)]) {
-        return [self.audioRecordDelegate audioRecordingPausedByTimeOut:self];
+    if ([self.delegate respondsToSelector:@selector(messagesInputToolbarAudioRecordingPausedByTimeOut:)]) {
+        return [self.delegate messagesInputToolbarAudioRecordingPausedByTimeOut:self];
     }
 }
 
 - (NSTimeInterval)maximumDuration {
     
-    if ([self.audioRecordDelegate respondsToSelector:@selector(audioRecordingMaximumDuration:)]) {
-        return [self.audioRecordDelegate audioRecordingMaximumDuration:self];
+    if ([self.delegate respondsToSelector:@selector(inputPanelAudioRecordingMaximumDuration:)]) {
+        return [self.delegate inputPanelAudioRecordingMaximumDuration:self];
     }
     
     return 0.0;
@@ -406,8 +402,8 @@ static void * kQMInputToolbarKeyValueObservingContext = &kQMInputToolbarKeyValue
 
 - (NSTimeInterval)currentDuration {
     
-    if ([self.audioRecordDelegate respondsToSelector:@selector(audioRecordingDuration:)]) {
-        return [self.audioRecordDelegate audioRecordingDuration:self];
+    if ([self.delegate respondsToSelector:@selector(inputPanelAudioRecordingDuration:)]) {
+        return [self.delegate inputPanelAudioRecordingDuration:self];
     }
     
     return 0.0;
@@ -417,7 +413,7 @@ static void * kQMInputToolbarKeyValueObservingContext = &kQMInputToolbarKeyValue
     
     if (!_audioRecordButtonItem) {
         
-        UIImage *recordImage = [QMChatResources imageNamed:@"ic_audio"];
+        UIImage *recordImage = [UIImage imageNamed:@"ic_audio"];
         UIImage *normalImage = [recordImage imageMaskedWithColor:[UIColor lightGrayColor]];
         
         CGRect frame = CGRectMake(12, 0, recordImage.size.width, 32.0);

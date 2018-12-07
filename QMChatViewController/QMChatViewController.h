@@ -38,9 +38,8 @@
 #import "QMChatIncomingLinkPreviewCell.h"
 #import "QMChatOutgoingLinkPreviewCell.h"
 
-NS_ASSUME_NONNULL_BEGIN
-
 @interface QMChatViewController : UIViewController <QMChatCollectionViewDataSource, QMChatCollectionViewDelegateFlowLayout, UITextViewDelegate>
+
 
 @property (strong, nonatomic) QMChatDataSource *chatDataSource;
 /**
@@ -61,11 +60,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (weak, nonatomic, readonly) QMInputToolbar *inputToolbar;
 
 /**
- Progress view. Is hiden by default.
- */
-@property (weak, nonatomic) IBOutlet FFCircularProgressView *progressView;
-
-/**
  *  The display name of the current user who is sending messages.
  *
  *  @discussion This value does not have to be unique. This value must not be `nil`.
@@ -80,6 +74,14 @@ NS_ASSUME_NONNULL_BEGIN
  *  checked against this identifier. This value must not be `nil`.
  */
 @property (assign, nonatomic) NSUInteger senderID;
+
+/**
+ *  Float value that used as height for section header.
+ *
+ *  @discussion Set this value with data source method '- (CGFloat)heightForSectionHeader'.
+ *  Section header will not be displayed if value is '0'.
+ */
+@property (assign, nonatomic) CGFloat heightForSectionHeader;
 
 /**
  *  Specifies whether or not the view controller should automatically scroll to the most recent message
@@ -109,7 +111,7 @@ NS_ASSUME_NONNULL_BEGIN
  *
  *  @return Configured attributed string.
  */
-- (nullable NSAttributedString *)attributedStringForItem:(QBChatMessage *)messageItem;
+- (NSAttributedString *)attributedStringForItem:(QBChatMessage *)messageItem;
 
 /**
  *  Method to create chat message top label attributed string (Usually - chat message owner name). Have to be overriden in subclasses.
@@ -118,7 +120,7 @@ NS_ASSUME_NONNULL_BEGIN
  *
  *  @return Configured attributed string.
  */
-- (nullable NSAttributedString *)topLabelAttributedStringForItem:(QBChatMessage *)messageItem;
+- (NSAttributedString *)topLabelAttributedStringForItem:(QBChatMessage *)messageItem;
 
 /**
  *  Method to create chat message bottom label attributed string (Usually - chat message date sent). Have to be overriden in subclasses.
@@ -127,7 +129,7 @@ NS_ASSUME_NONNULL_BEGIN
  *
  *  @return Configured attributed string.
  */
-- (nullable NSAttributedString *)bottomLabelAttributedStringForItem:(QBChatMessage *)messageItem;
+- (NSAttributedString *)bottomLabelAttributedStringForItem:(QBChatMessage *)messageItem;
 
 /**
  *  Collection Cell View class for specific message. Have to be overriden in subclasses. Defaults cells are supplied with QMChatViewController.
@@ -196,6 +198,8 @@ NS_ASSUME_NONNULL_BEGIN
                   senderId:(NSUInteger)senderId
          senderDisplayName:(NSString *)senderDisplayName
                       date:(NSDate *)date;
+
+- (void)didPressSendButton:(UIButton *)sender;
 /**
  *  This method is called when the user taps the accessory button on the `inputToolbar`.
  *
@@ -252,11 +256,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)finishReceivingMessageAnimated:(BOOL)animated;
 
 /**
- Input bar start pos
- */
-- (NSUInteger)inputToolBarStartPos;
-
-/**
  *  Scrolls the collection view such that the bottom most cell is completely visible, above the `inputToolbar`.
  *
  *  @param animated Pass `YES` if you want to animate scrolling, `NO` if it should be immediate.
@@ -270,21 +269,9 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)hideKeyboard:(BOOL)animated;
 
-/**
- Make the background layer to spin around its center. This should be called in the main thread.
- */
-- (void)startSpinProgress;
-
-/**
- Stop the spinning of the background layer. This should be called in the main thread.
- */
-- (void)stopSpinProgress;
-
 #pragma mark - Methods requiring super
 
 - (void)viewDidLoad NS_REQUIRES_SUPER;
 - (void)viewWillAppear:(BOOL)animated NS_REQUIRES_SUPER;
-
+- (void)checkAuthorizationStatusWithCompletion:(void (^)(BOOL granted))completion;
 @end
-
-NS_ASSUME_NONNULL_END
